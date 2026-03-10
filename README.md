@@ -1,5 +1,9 @@
 # 🧠 Zotero Paper Coach
 
+<p align="center">
+  <img src="./docs/assets/banner.png" alt="Zotero Paper Coach banner" width="100%" />
+</p>
+
 一个面向 OpenClaw 的论文阅读教练技能：用于给学术论文和 Zotero 本地 PDF 附件添加**结构化高亮、导师式边注、阅读导图、标注计划**，并支持**按正文页数 / 词数 / 段落密度动态控制标注密度**。
 
 ## 🚀 安装（给 AI 直接贴这句）
