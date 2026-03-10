@@ -1,8 +1,8 @@
-# Zotero Paper Coach
+# 🧠 Zotero Paper Coach
 
 一个面向 OpenClaw 的论文阅读教练技能：用于给学术论文和 Zotero 本地 PDF 附件添加**结构化高亮、导师式边注、阅读导图、标注计划**，并支持**按正文页数 / 词数 / 段落密度动态控制标注密度**。
 
-## 安装（给 AI 直接贴这句）
+## 🚀 安装（给 AI 直接贴这句）
 
 ```text
 帮我安装 Zotero Paper Coach：https://raw.githubusercontent.com/RZX00/zotero-paper-coach/main/docs/install.md
@@ -11,7 +11,7 @@
 仓库地址：`RZX00/zotero-paper-coach`  
 分支：`main`
 
-## 它是干什么的
+## ✨ 它是干什么的
 
 `zotero-paper-coach` **不是**一个无脑自动高亮器。
 
@@ -30,7 +30,7 @@
 - 边注要真能帮人读懂，不是“important”这种废话
 - 对 Zotero 工作流保持诚实：能改 PDF 附件就说改 PDF 附件，不假装自己是原生数据库注释系统
 
-## 流程图
+## 🗺️ 流程图
 
 ```mermaid
 flowchart TD
@@ -44,7 +44,7 @@ flowchart TD
     F --> H
 ```
 
-## 主要能力
+## 🛠️ 主要能力
 
 ### 1）目标导向标注
 
@@ -96,7 +96,7 @@ flowchart TD
 - 提供稳定的 Zotero 导入脚本
 - 避开 macOS 上不稳定的 `open -a Zotero file.pdf` 路线
 
-## 目录结构
+## 📁 目录结构
 
 ```text
 zotero-paper-coach/
@@ -117,7 +117,7 @@ zotero-paper-coach/
     └── remove_openclaw_annots.py
 ```
 
-## 手动安装
+## 📦 手动安装
 
 把 `zotero-paper-coach/` 整个目录放到以下任一位置：
 
@@ -126,7 +126,7 @@ zotero-paper-coach/
 
 然后重新开启一个新的 OpenClaw session，让技能被重新加载。
 
-## 运行时依赖
+## ⚙️ 运行时依赖
 
 安装 skill 文件本身不要求自动改系统。
 
@@ -136,7 +136,7 @@ zotero-paper-coach/
 - PyMuPDF / `fitz`
 - Zotero Desktop（如果你要走 Zotero 查看/导入流程）
 
-## 这个 skill 的立场
+## 🎯 这个 skill 的立场
 
 它有明确偏向：
 
@@ -145,7 +145,7 @@ zotero-paper-coach/
 - 真正有价值的是 annotation plan 和阅读导图
 - 产品诚实比魔法感重要
 
-## 仓库内容
+## 📚 仓库内容
 
 这个仓库是按“可直接 GitHub 分发 + 可通过提示词安装”来组织的：
 
@@ -154,13 +154,13 @@ zotero-paper-coach/
 - `PROMPT_TEMPLATE.txt` — 可直接复制的安装提示词
 - `zotero-paper-coach.skill` — 已打包好的 skill 文件
 
-## 当前状态
+## ✅ 当前状态
 
 当前是**已验证可运行的原型**，已经拿真实论文跑过：
 
 - Transformer 风格技术论文
 - 哲学 / 诠释学理论论文
 
-## License
+## 📄 License
 
-如果你准备公开长期维护，建议再补一个 LICENSE。
+本项目采用 **MIT License**。详见 [`LICENSE`](./LICENSE)。
