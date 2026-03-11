@@ -11,11 +11,18 @@ Input spec (JSON file):
     "limit": 1
   }
 ]
+
+Implementation note:
+- Phrase matching normalizes whitespace so extracted text containing newlines can
+  still match wrapped PDF text.
+- Multi-line matches are grouped and written as a single highlight annotation
+  where possible, instead of one annotation per line fragment.
 """
 import argparse
 import json
 import os
 import shutil
+import sys
 import fitz
 
 COLORS = {
@@ -25,6 +32,50 @@ COLORS = {
     'green': (0.67, 0.90, 0.60),
     'orange': (1.0, 0.75, 0.33),
 }
+
+
+def normalize_phrase(text):
+    return ' '.join((text or '').split())
+
+
+def rect_of(hit):
+    return hit.rect if hasattr(hit, 'rect') else hit
+
+
+def union_rect(hits):
+    rects = [rect_of(hit) for hit in hits]
+    out = fitz.Rect(rects[0])
+    for rect in rects[1:]:
+        out.include_rect(rect)
+    return out
+
+
+def group_wrapped_hits(hits):
+    """Group consecutive search hits that belong to one wrapped multi-line match.
+
+    PyMuPDF returns one rect/quad per line fragment for wrapped matches. We merge
+    nearby vertical fragments into a single logical occurrence so one highlight
+    can span multiple lines.
+    """
+    if not hits:
+        return []
+
+    groups = [[hits[0]]]
+    prev_rect = rect_of(hits[0])
+    for hit in hits[1:]:
+        rect = rect_of(hit)
+        prev_h = max(prev_rect.height, 1)
+        curr_h = max(rect.height, 1)
+        same_line = abs(rect.y0 - prev_rect.y0) <= max(prev_h, curr_h) * 0.25
+        vertical_gap = rect.y0 - prev_rect.y1
+        wrapped_next_line = (not same_line) and 0 <= vertical_gap <= max(prev_h, curr_h) * 1.5
+
+        if wrapped_next_line:
+            groups[-1].append(hit)
+        else:
+            groups.append([hit])
+        prev_rect = rect
+    return groups
 
 
 def save(doc, path):
@@ -58,21 +109,32 @@ def main():
     added = 0
     for item in plan:
         page = doc[item['page'] - 1]
-        phrase = item['phrase']
+        raw_phrase = item['phrase']
+        phrase = normalize_phrase(raw_phrase)
         color = COLORS.get(item.get('color', 'yellow'), COLORS['yellow'])
         note = item.get('note', '')
         limit = int(item.get('limit', 1))
-        rects = page.search_for(phrase)
+        hits = page.search_for(phrase, quads=True)
+        groups = group_wrapped_hits(hits)
+        if not groups and raw_phrase != phrase:
+            hits = page.search_for(raw_phrase, quads=True)
+            groups = group_wrapped_hits(hits)
+        if not groups:
+            print(f"[warn] no match on page {item['page']} for phrase: {raw_phrase[:80]!r}", file=sys.stderr)
+            continue
+
         count = 0
-        for r in rects:
-            a = page.add_highlight_annot(r)
+        for group in groups:
+            annot_target = group[0] if len(group) == 1 else group
+            a = page.add_highlight_annot(annot_target)
             a.set_colors(stroke=color)
             a.set_info(title='OpenClaw Annotator', content=note)
             a.update()
             added += 1
             count += 1
             if note:
-                t = page.add_text_annot((r.x1 + 8, r.y0), note)
+                anchor = union_rect(group)
+                t = page.add_text_annot((anchor.x1 + 8, anchor.y0), note)
                 t.set_info(title='OpenClaw Annotator', content=note)
                 t.update()
                 added += 1

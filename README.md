@@ -99,6 +99,7 @@ flowchart TD
 - 支持 Zotero 本地 PDF 附件工作流
 - 提供稳定的 Zotero 导入脚本
 - 避开 macOS 上不稳定的 `open -a Zotero file.pdf` 路线
+- 支持 **跨行 / 自动换行** 的短语高亮写回，不会再把一段 wrapped phrase 裂成几段独立高亮
 
 ## 📁 目录结构
 
