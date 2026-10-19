@@ -1,6 +1,6 @@
 # Zotero import workflow
 
-Use this when a generated or modified PDF must be inspected inside Zotero desktop on this Mac.
+Use this when a generated or modified PDF must be inspected inside Zotero desktop (macOS, Windows, or Linux).
 
 ## Hard rule
 
@@ -8,7 +8,7 @@ Do **not** try to import a PDF with:
 
 - `open -a Zotero /path/to/file.pdf`
 
-On macOS, Zotero.app is not registered as a general PDF document opener/importer in the way we need here. This can produce:
+On macOS in particular, Zotero.app is not registered as a general PDF document opener/importer in the way we need here. This can produce:
 
 - `The selected file is not in a supported format.`
 
@@ -29,7 +29,7 @@ On macOS, Zotero.app is not registered as a general PDF document opener/importer
 Use the bundled helper script:
 
 ```bash
-python3 /Users/apple/.openclaw/workspace/skills/zotero-paper-coach/scripts/import_pdf_to_zotero.py \
+<python> <skill-dir>/scripts/import_pdf_to_zotero.py \
   /path/to/file.pdf \
   --title "My annotated PDF" \
   --open
@@ -58,11 +58,9 @@ And send the PDF bytes as the request body.
 
 ## Opening the imported attachment
 
-If the helper script prints an `attachmentKey`, open it with:
+If the helper script prints an `attachmentKey`, open `zotero://open-pdf/library/items/<ATTACHMENT_KEY>` with the system URL opener: `open` on macOS, `Start-Process "<uri>"` in Windows PowerShell, `xdg-open` on Linux. The helper's `--open` flag does this for you.
 
-```bash
-open 'zotero://open-pdf/library/items/<ATTACHMENT_KEY>'
-```
+`<python>` is `python3` on macOS and Linux and `python` on Windows. The helper talks to the real Zotero on port 23119, so any PDF it imports, including a test file, lands in the user's currently selected library or collection.
 
 ## Notes
 

@@ -21,9 +21,14 @@ Implementation note:
 import argparse
 import json
 import os
+import re
 import shutil
 import sys
 import fitz
+
+# Author name stamped on every annotation; remove_coach_annots.py uses it to clean up
+# only what this skill wrote.
+AUTHOR = 'Zotero Paper Coach'
 
 COLORS = {
     'yellow': (1.0, 0.92, 0.23),
@@ -36,6 +41,12 @@ COLORS = {
 
 def normalize_phrase(text):
     return ' '.join((text or '').split())
+
+
+def dehyphenate(text):
+    # Extracted text keeps end-of-line hyphenation ('gener-\nalization'), while
+    # PyMuPDF's search matches the joined word ('generalization').
+    return re.sub(r'(\w)-\s+(\w)', r'\1\2', text)
 
 
 def rect_of(hit):
@@ -85,7 +96,12 @@ def save(doc, path):
         tmp = path + '.tmp.pdf'
         doc.save(tmp)
         doc.close()
-        os.replace(tmp, path)
+        try:
+            os.replace(tmp, path)
+        except PermissionError:
+            # Windows readers often lock the open PDF; leave the original untouched.
+            os.remove(tmp)
+            sys.exit(f'[error] {path} is locked by another program. Close it in your PDF reader or Zotero, then run again.')
         return False
     return True
 
@@ -98,11 +114,14 @@ def main():
     args = ap.parse_args()
 
     if args.backup:
-        bak = args.pdf + '.bak-openclaw'
+        # Shared with remove_coach_annots.py: only the first run creates it, so it
+        # always holds the PDF as it was before this skill touched it.
+        bak = args.pdf + '.bak-paper-coach'
         if not os.path.exists(bak):
             shutil.copy2(args.pdf, bak)
 
-    with open(args.plan_json, 'r', encoding='utf-8') as f:
+    # utf-8-sig: PowerShell 5.1 writes a BOM with -Encoding utf8
+    with open(args.plan_json, 'r', encoding='utf-8-sig') as f:
         plan = json.load(f)
 
     doc = fitz.open(args.pdf)
@@ -119,6 +138,9 @@ def main():
         if not groups and raw_phrase != phrase:
             hits = page.search_for(raw_phrase, quads=True)
             groups = group_wrapped_hits(hits)
+        if not groups and dehyphenate(phrase) != phrase:
+            hits = page.search_for(dehyphenate(phrase), quads=True)
+            groups = group_wrapped_hits(hits)
         if not groups:
             print(f"[warn] no match on page {item['page']} for phrase: {raw_phrase[:80]!r}", file=sys.stderr)
             continue
@@ -128,14 +150,14 @@ def main():
             annot_target = group[0] if len(group) == 1 else group
             a = page.add_highlight_annot(annot_target)
             a.set_colors(stroke=color)
-            a.set_info(title='OpenClaw Annotator', content=note)
+            a.set_info(title=AUTHOR, content=note)
             a.update()
             added += 1
             count += 1
             if note:
                 anchor = union_rect(group)
                 t = page.add_text_annot((anchor.x1 + 8, anchor.y0), note)
-                t.set_info(title='OpenClaw Annotator', content=note)
+                t.set_info(title=AUTHOR, content=note)
                 t.update()
                 added += 1
             if count >= limit:

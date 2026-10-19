@@ -1,0 +1,44 @@
+[
+  {
+    "page": 1,
+    "phrase": "Its central claim is that a reading coach should mark only the few sentences that carry the argument, and explain why each one matters.",
+    "color": "yellow",
+    "note": "[主张] 这是摘要中的核心判断：标注应突出论证骨干，并说明每处标注的作用。",
+    "limit": 1
+  },
+  {
+    "page": 1,
+    "phrase": "The main result is a short list of anchor sentences per page, each with a note about its role in the paper.",
+    "color": "yellow",
+    "note": "[摘要] 作者把方案的主要产出概括为每页少量锚点句及其功能说明；这是本文声称的结果形式。",
+    "limit": 1
+  },
+  {
+    "page": 1,
+    "phrase": "A limitation is that exact phrase search can fail on ligatures, formulas and scanned pages.",
+    "color": "pink",
+    "note": "[限制] 精确文本匹配受连字、公式和扫描页影响；遇到这些内容时，锚点可靠性会下降。",
+    "limit": 1
+  },
+  {
+    "page": 1,
+    "phrase": "We define an anchor as a highlighted passage that a reader should return to when reviewing the paper.",
+    "color": "green",
+    "note": "[定义] “锚点”指复读时值得返回的高亮段落，不是所有被标记的文字。",
+    "limit": 1
+  },
+  {
+    "page": 1,
+    "phrase": "Density is measured by anchors per body page, not by the total number of annotation objects.",
+    "color": "blue",
+    "note": "[指标] 标注密度按正文每页的高亮锚点数计算；批注气泡不另算一个锚点。",
+    "limit": 1
+  },
+  {
+    "page": 1,
+    "phrase": "The plan lists the target sentence, the colour, a short note and the reason for including it. Only after the plan exists does the tool search the PDF for each phrase and write the highlight.",
+    "color": "blue",
+    "note": "[方法] 先确定句子、颜色和理由，再匹配原文写入 PDF；这让标注可复核，也减少盲目高亮。",
+    "limit": 1
+  }
+]

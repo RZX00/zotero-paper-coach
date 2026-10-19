@@ -30,7 +30,7 @@ A good run should answer:
 
 - annotate standalone PDFs
 - annotate Zotero-managed local PDF attachments
-- remove only prior OpenClaw-created annotations by default
+- remove only annotations previously written by this skill by default
 - generate a reading guide markdown sidecar
 - generate an annotation plan markdown or JSON sidecar
 - expose confidence and fallback mode clearly to the user
@@ -206,7 +206,7 @@ Use defaults unless the user asks for precision control:
 
 - note depth: explain
 - color scheme: standard
-- rewrite mode: clean-openclaw-only
+- rewrite mode: clean-coach-only
 
 ## Output design
 
@@ -346,16 +346,18 @@ Weaknesses:
 Support these modes:
 
 - append
-- clean-openclaw-only
+- clean-coach-only
 - wipe-all
 
-Default must remain `clean-openclaw-only`.
+Default must remain `clean-coach-only`.
 
-OpenClaw-authored annotations should be identifiable by metadata, not only title text.
+Annotations written by this skill should be identifiable by metadata, not only title text.
+
+Current implementation: annotations are identified only by the author name `Zotero Paper Coach` (legacy runs: `OpenClaw`). The fields below are planned, not implemented.
 
 Recommended metadata fields:
 
-- producer: openclaw.zotero-paper-coach
+- producer: zotero-paper-coach
 - skill_version
 - run_id
 - rewrite_mode
@@ -379,7 +381,7 @@ Must handle and explain:
 
 1. formalize annotation plan schema
 2. generate reading guide as a first-class output
-3. strengthen OpenClaw annotation metadata for safe cleanup
+3. strengthen annotation metadata for safe cleanup
 4. add Zotero attachment locator workflow
 5. add confidence-aware degradation behavior
 
