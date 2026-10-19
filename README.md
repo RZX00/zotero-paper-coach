@@ -20,7 +20,7 @@
 
 ## 📌 状态与限制
 
-- **能用在哪**：任何加载 Agent Skills 的 Agent。已实测 Codex（Windows 11，从 `.agents/skills` 自动加载并完成标注）；Claude Code 已按本技能完成标注，自动加载待在新会话中确认。2026-10 起改为通用技能，此前只支持 OpenClaw。
+- **能用在哪**：任何加载 Agent Skills 的 Agent。已实测 Codex（Windows 11，从 `.agents/skills` 自动加载并完成标注）和 Claude Code（装进 `~/.claude/skills/` 后出现在技能列表里，按本技能完成标注）。2026-10 起改为通用技能，此前只支持 OpenClaw。
 - **写在哪**：标注写进 PDF 文件本身，不是 Zotero 数据库里的原生注释；写之前先备份原件。默认只清理本技能写过的标注，你自己的标注不动。
 - **不适合**：扫描件或 OCR 质量差的 PDF（只出阅读导读和标注计划，不改 PDF）；必须用 Zotero 原生注释的场景。
 - **依赖**：Python 3 和 PyMuPDF；缺依赖时 Agent 先问你，不会自行安装。脚本已在 Windows 11、Python 3.13、PyMuPDF 1.25.3 上测试，最初在 macOS 上开发。
@@ -48,8 +48,10 @@
 对 Agent 说：
 
 ```text
-用 quick-read 模式标注这篇论文：~/Zotero/storage/ABCD1234/paper.pdf
+用 zotero-paper-coach，按 quick-read 模式标注这篇论文：~/Zotero/storage/ABCD1234/paper.pdf
 ```
+
+第一次建议像上面这样点名技能。你装的技能很多时，Claude Code 只会给最常用的技能列出描述，其余只列名字，一句「标一下重点」可能被通用的 PDF 技能接走；用过几次之后，不点名也会选中它。
 
 它会：
 
