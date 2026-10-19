@@ -20,7 +20,7 @@ Use when:
 Behavior:
 
 - back up the PDF first
-- optionally clean prior OpenClaw annotations
+- optionally clean prior annotations written by this skill
 - write highlights and notes into the PDF
 - optionally emit reading guide and annotation plan sidecars
 

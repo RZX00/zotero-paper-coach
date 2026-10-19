@@ -48,7 +48,7 @@ The plan gives us:
     "density": "medium",
     "note_depth": "explain",
     "color_scheme": "standard",
-    "rewrite_mode": "clean-openclaw-only",
+    "rewrite_mode": "clean-coach-only",
     "language": "zh-CN"
   },
   "section_priorities": [

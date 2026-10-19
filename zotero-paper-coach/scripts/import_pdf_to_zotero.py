@@ -60,7 +60,7 @@ def get_selected_collection(timeout: float = 3.0) -> dict:
 
 
 def import_pdf(pdf_path: pathlib.Path, title: str, timeout: float = 120.0) -> dict:
-    session_id = 'openclaw-' + uuid.uuid4().hex
+    session_id = 'paper-coach-' + uuid.uuid4().hex
     meta = {
         'sessionID': session_id,
         'url': pdf_path.as_uri(),
@@ -74,7 +74,8 @@ def import_pdf(pdf_path: pathlib.Path, title: str, timeout: float = 120.0) -> di
         headers={
             'Content-Type': 'application/pdf',
             'X-Zotero-Connector-API-Version': '3',
-            'X-Metadata': json.dumps(meta, ensure_ascii=False),
+            # Header values are sent as latin-1; ASCII-only JSON keeps CJK titles valid.
+            'X-Metadata': json.dumps(meta),
         },
     )
     with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -125,7 +126,12 @@ def find_imported_attachment_key(source_pdf: pathlib.Path, since_ts: float, wind
 
 def open_in_zotero(item_key: str) -> None:
     uri = f'zotero://open-pdf/library/items/{item_key}'
-    subprocess.run(['open', uri], check=True)
+    if sys.platform == 'darwin':
+        subprocess.run(['open', uri], check=True)
+    elif sys.platform == 'win32':
+        os.startfile(uri)
+    else:
+        subprocess.run(['xdg-open', uri], check=True)
 
 
 def main() -> int:
@@ -163,8 +169,13 @@ def main() -> int:
             'attachmentKey': item_key,
         }
         if args.open and item_key:
-            open_in_zotero(item_key)
-            result['opened'] = True
+            # The import already succeeded; a missing URL handler must not turn it into a failure.
+            try:
+                open_in_zotero(item_key)
+                result['opened'] = True
+            except (OSError, subprocess.CalledProcessError) as e:
+                result['opened'] = False
+                result['warning'] = f'Imported, but could not open it in Zotero: {e}'
         elif args.open:
             result['opened'] = False
             result['warning'] = 'Imported, but failed to resolve attachment key for immediate open'
@@ -183,6 +194,7 @@ def main() -> int:
 
     if args.json:
         print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0 if result.get('ok') else 1
     else:
         if result.get('ok'):
             print(f"Imported into Zotero: {result.get('title')}")

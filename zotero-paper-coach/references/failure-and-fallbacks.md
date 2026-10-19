@@ -77,11 +77,11 @@ Response:
 Examples:
 
 - user wants a fresh run but has existing personal annotations
-- prior OpenClaw annotations are missing reliable metadata
+- prior annotations written by this skill are missing reliable metadata
 
 Response:
 
-- default to `clean-openclaw-only`
+- default to `clean-coach-only`
 - never wipe user annotations unless explicitly told to `wipe-all`
 - prefer conservative cleanup when metadata is incomplete
 

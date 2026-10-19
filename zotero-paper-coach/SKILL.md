@@ -1,11 +1,13 @@
 ---
 name: zotero-paper-coach
-description: Annotate academic papers and Zotero-managed PDF attachments with structured, high-value highlights and mentor-style notes. Use when a user wants paper pre-highlighting, reading guidance, layered annotation styles, note density control, color-coded importance, Zotero/PDF write-back, or a reusable workflow for studying, literature review, exam prep, or paper comprehension.
+description: Annotate academic papers and Zotero-managed PDF attachments with structured, high-value highlights and mentor-style notes. Use when a user wants paper pre-highlighting, reading guidance, layered annotation styles, note density control, color-coded importance, Zotero/PDF write-back, or a reusable workflow for studying, literature review, exam prep, or paper comprehension. Also triggers on 论文标注、读论文、画重点、高亮、边注、精读、文献综述、Zotero.
 ---
 
 # Zotero Paper Coach
 
 Provide paper annotation as a reading-coach workflow, not as raw highlighting.
+
+All file paths in this skill (`references/…`, `scripts/…`, `DESIGN.md`) are relative to the directory that contains this `SKILL.md`. Resolve them against that directory before reading a file or running a script; the skill works the same in any agent that loads Agent Skills (for example Claude Code or Codex).
 
 ## Quick start
 
@@ -32,7 +34,7 @@ Collect these knobs:
 - **density**: `light` | `medium` | `heavy` | `teaching`
 - **note depth**: `brief` | `explain` | `teach`
 - **color scheme**: `standard` | `minimal` | `research`
-- **rewrite mode**: `clean-openclaw-only` | `append` | `wipe-all`
+- **rewrite mode**: `clean-coach-only` | `append` | `wipe-all`
 
 Recommended defaults:
 
@@ -41,14 +43,14 @@ Recommended defaults:
 - density: `medium`
 - note depth: `explain`
 - color scheme: `standard`
-- rewrite mode: `clean-openclaw-only`
+- rewrite mode: `clean-coach-only`
 
 ## Annotation semantics
 
 Use stable color meaning. Do not improvise colors per run.
 
-Read `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/references/annotation-styles.md` when deciding style, density, and color policy.
-Read `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/references/user-modes.md` when mapping the user's actual job to annotation behavior.
+Read `references/annotation-styles.md` when deciding style, density, and color policy.
+Read `references/user-modes.md` when mapping the user's actual job to annotation behavior.
 
 ### Standard color scheme
 
@@ -67,7 +69,7 @@ For Zotero use cases:
 - Prefer local attachment write-back to the Zotero-managed PDF file.
 - Confirm the exact paper before editing if multiple candidates exist.
 - If direct Zotero UI automation is unavailable, edit the underlying PDF attachment.
-- When a generated or modified PDF needs to be inspected inside Zotero desktop, read `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/references/zotero-import-workflow.md` and prefer the helper script instead of `open -a Zotero file.pdf`.
+- When a generated or modified PDF needs to be inspected inside Zotero desktop, read `references/zotero-import-workflow.md` and prefer the helper script instead of `open -a Zotero file.pdf`.
 
 For standalone PDFs:
 
@@ -86,7 +88,7 @@ Extract enough text to identify:
 - conclusion
 
 When the PDF is scanned or text extraction is poor, say so and switch to a reduced-confidence workflow.
-Read `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/references/backend-modes.md` and `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/references/failure-and-fallbacks.md` when choosing whether to write back or downgrade.
+Read `references/backend-modes.md` and `references/failure-and-fallbacks.md` when choosing whether to write back or downgrade.
 
 ### Step 3: Build an annotation plan
 
@@ -103,7 +105,7 @@ Create an internal plan with:
 - item confidence
 - whether the item should be promoted into the reading guide
 
-Read `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/references/annotation-plan-schema.md` for the recommended plan shape.
+Read `references/annotation-plan-schema.md` for the recommended plan shape.
 
 The plan should optimize for learning value, not raw coverage.
 
@@ -184,7 +186,7 @@ Write notes in one of these patterns:
 
 ## Density policy
 
-Read `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/references/density-profiles.md` when choosing how much to mark. Compute density dynamically from body pages, body words, and paragraph density rather than relying on a fixed total count.
+Read `references/density-profiles.md` when choosing how much to mark. Compute density dynamically from body pages, body words, and paragraph density rather than relying on a fixed total count.
 
 Rules:
 
@@ -207,7 +209,7 @@ Optional sidecar outputs:
 
 Treat the reading guide as a first-class teaching artifact, not a debug byproduct.
 
-If the user asks for teaching support, generate a reading guide using `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/references/reading-goals.md`.
+If the user asks for teaching support, generate a reading guide using `references/reading-goals.md`.
 
 ## Dependency policy
 
@@ -223,8 +225,46 @@ Optional helpers when needed:
 - OCR/text extraction tooling for scanned PDFs
 - SQLite inspection for local Zotero attachment lookup
 
-Before first write on a machine, mention missing required dependencies and ask before installing them.
+Before first write on a machine, mention missing required dependencies and ask before installing them. Install with the same interpreter that runs the scripts: `<python> -m pip install pymupdf`; check with `<python> -c "import fitz"`.
 Do not claim Zotero-native support unless it is actually implemented.
+
+## Running the scripts
+
+- `<skill-dir>` is the directory that contains this `SKILL.md`.
+- `<python>` is `python3` on macOS and Linux, and `python` (or `py -3`) on Windows, where `python3` is often a Microsoft Store stub that fails.
+- Quote paths that contain spaces.
+
+Steps for the default rewrite mode (`clean-coach-only`):
+
+1. Extract page text: `<python> <skill-dir>/scripts/extract_pdf_outline.py paper.pdf -o outline.json`. Use `-o` instead of shell redirection; Windows PowerShell 5.1 re-encodes redirected output and corrupts non-ASCII text.
+2. Remove this skill's earlier annotations, backing up first: `<python> <skill-dir>/scripts/remove_coach_annots.py paper.pdf --backup`. This also removes annotations written by versions before 2026-10, whose author name starts with `OpenClaw`.
+3. Write highlights and notes: `<python> <skill-dir>/scripts/annotate_pdf.py paper.pdf highlights.json --backup`
+
+Other rewrite modes: `append` skips step 2. `wipe-all` runs step 2 with `--all` instead, which deletes every annotation in the file including the user's own; run it only after the user confirms in this conversation.
+
+Backups: `--backup` copies the original to `paper.pdf.bak-paper-coach` only if that file does not exist yet, so the backup always holds the state before the first run of this skill.
+
+`annotate_pdf.py` takes a flat JSON list, not the plan object from `references/annotation-plan-schema.md`. Convert each plan item:
+
+| Plan item field | Script input field |
+|---|---|
+| `page` | `page` |
+| `anchor_text` | `phrase` |
+| `color` | `color` |
+| `note_label` + space + `note_content` | `note` |
+| (one occurrence) | `limit`: 1 |
+
+```json
+[
+  {"page": 1, "phrase": "exact sentence copied from the extracted text", "color": "yellow", "note": "[主张] 这是全文要你接受的核心判断。", "limit": 1}
+]
+```
+
+- Copy `phrase` from the extracted text of that page. The script normalizes whitespace, so wrapped lines still match, and it retries once with end-of-line hyphenation removed (`gener- alization` → `generalization`).
+- Phrases that still do not match are reported on stderr as `[warn] no match …` and skipped. Check stderr and retry those items with a shorter phrase from the same sentence.
+- The script prints the number of annotation objects written: one highlight plus one note for each item that has a note.
+- Every annotation is stamped with the author name `Zotero Paper Coach`; that author name is what `remove_coach_annots.py` matches.
+- If the PDF is open in a reader that locks it (common on Windows), the scripts stop with a message asking the user to close the file; retry after they do.
 
 ## Safety and write discipline
 
@@ -240,19 +280,19 @@ Always:
 
 Use these references as needed:
 
-- `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/DESIGN.md`
-- `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/references/annotation-styles.md`
-- `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/references/density-profiles.md`
-- `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/references/reading-goals.md`
-- `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/references/user-modes.md`
-- `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/references/annotation-plan-schema.md`
-- `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/references/backend-modes.md`
-- `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/references/failure-and-fallbacks.md`
-- `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/references/zotero-import-workflow.md`
+- `DESIGN.md`
+- `references/annotation-styles.md`
+- `references/density-profiles.md`
+- `references/reading-goals.md`
+- `references/user-modes.md`
+- `references/annotation-plan-schema.md`
+- `references/backend-modes.md`
+- `references/failure-and-fallbacks.md`
+- `references/zotero-import-workflow.md`
 
 Use scripts from:
 
-- `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/scripts/annotate_pdf.py`
-- `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/scripts/remove_openclaw_annots.py`
-- `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/scripts/extract_pdf_outline.py`
-- `/Users/apple/.openclaw/workspace/skills/zotero-paper-coach/scripts/import_pdf_to_zotero.py`
+- `scripts/annotate_pdf.py`
+- `scripts/remove_coach_annots.py`
+- `scripts/extract_pdf_outline.py`
+- `scripts/import_pdf_to_zotero.py`
