@@ -260,7 +260,7 @@ Backups: `--backup` copies the original to `paper.pdf.bak-paper-coach` only if t
 ]
 ```
 
-- Copy `phrase` from the extracted text of that page. The script normalizes whitespace, so wrapped lines still match, and it retries once with end-of-line hyphenation removed (`gener- alization` → `generalization`).
+- Copy `phrase` from the extracted text of that page. The script normalizes whitespace, so wrapped lines still match. It also compares ligatures as plain letters (a typeset `ﬁ` matches `fi`) and treats a hyphen as optional, so a phrase may keep its natural spelling `prompt-based` even when the PDF breaks the line after `prompt-`, and `gener- alization` still matches `generalization`.
 - Phrases that still do not match are reported on stderr as `[warn] no match …` and skipped. Check stderr and retry those items with a shorter phrase from the same sentence.
 - The script prints the number of annotation objects written: one highlight plus one note for each item that has a note.
 - Every annotation is stamped with the author name `Zotero Paper Coach`; that author name is what `remove_coach_annots.py` matches.
