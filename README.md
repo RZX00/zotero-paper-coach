@@ -8,15 +8,13 @@
 
 ## 🔍 实际效果
 
-![一页示例论文被 Codex 按 quick-read 目标标注后的样子：黄色是核心主张，粉色是限制，绿色是定义，蓝色是方法和指标，右侧黄色图标是边注](./docs/assets/demo-agent-annotated.png)
+![ReAct 论文第 1 页被 Claude Code 按 quick-read 目标标注后的样子：绿色是先读的背景句，黄色是核心主张，粉色是要解决的问题，蓝色是证据数字，橙色是可引用的句子，右侧黄色图标是边注](./docs/assets/demo-react-annotated.png)
 
-上图是 Codex 装好本技能后，收到一句「用 quick-read 模式标注这篇论文」自己完成的：读正文、挑出 6 句、配色、写边注、写回 PDF。三条边注原文：
+上图是一篇真实论文：ReAct（Yao 等，ICLR 2023，[arXiv 2210.03629](https://arxiv.org/abs/2210.03629)，CC BY 4.0）。Claude Code 装好本技能后，按 quick-read 目标、中文边注标注了全文：14 处高亮、10 条边注，落在第 1、3、6、8、9 页，写回时没有一处匹配失败。图中摘要旁 4 条边注里的 3 条原文：
 
-> **[主张]** 这是摘要中的核心判断：标注应突出论证骨干，并说明每处标注的作用。
-> **[限制]** 精确文本匹配受连字、公式和扫描页影响；遇到这些内容时，锚点可靠性会下降。
-> **[定义]**「锚点」指复读时值得返回的高亮段落，不是所有被标记的文字。
-
-输入是一页合成的示例稿，不是真实论文。〔待补：真实论文的标注截图〕
+> **[主张]** 这是全文的核心主张。人话：让模型边想边做，“想法”和“动作”交替写出来，而不是先想完再做，也不是只做不想。
+> **[限制]** 这里的“毛病”是纯思维链（CoT）的毛病，是 ReAct 要对付的靶子，不是 ReAct 自己的限制。ReAct 自己的短板见第 6 页。
+> **[证据]** 摘要里最亮眼的数字：ALFWorld 成功率高 34 个百分点，WebShop 高 10 个百分点（绝对差值，不是相对比例）。对手是用千到十万级任务数据训练的模仿/强化学习方法，ReAct 只靠 1 到 2 个提示示例。34 的算法见第 8 页。
 
 ## 📌 状态与限制
 
@@ -70,7 +68,7 @@ python3 zotero-paper-coach/scripts/annotate_pdf.py demo.pdf docs/demo/sample-hig
 # 输出 12：6 处高亮 + 6 条边注；demo.pdf.bak-paper-coach 是原件备份
 ```
 
-[`sample-highlights.json`](./docs/demo/sample-highlights.json) 就是上图那次运行的标注计划，[`sample-paper.annotated.pdf`](./docs/demo/sample-paper.annotated.pdf) 是结果。
+[`sample-paper.pdf`](./docs/demo/sample-paper.pdf) 是一页合成的示例稿。[`sample-highlights.json`](./docs/demo/sample-highlights.json) 是 Codex 在这页上运行时写出的标注计划，[`sample-paper.annotated.pdf`](./docs/demo/sample-paper.annotated.pdf) 是结果，[截图](./docs/assets/demo-agent-annotated.png)。
 
 </details>
 
