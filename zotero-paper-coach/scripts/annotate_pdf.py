@@ -15,6 +15,9 @@ Input spec (JSON file):
 Implementation note:
 - Phrase matching normalizes whitespace so extracted text containing newlines can
   still match wrapped PDF text.
+- If PyMuPDF's own search finds nothing, a second matcher compares NFKC-folded
+  text on both sides, so 'fi' matches a typeset 'ﬁ' ligature, and treats a hyphen
+  as optional, so 'prompt-based' matches 'prompt-' + line break + 'based'.
 - Multi-line matches are grouped and written as a single highlight annotation
   where possible, instead of one annotation per line fragment.
 """
@@ -24,6 +27,7 @@ import os
 import re
 import shutil
 import sys
+import unicodedata
 import fitz
 
 # Author name stamped on every annotation; remove_coach_annots.py uses it to clean up
@@ -47,6 +51,95 @@ def dehyphenate(text):
     # Extracted text keeps end-of-line hyphenation ('gener-\nalization'), while
     # PyMuPDF's search matches the joined word ('generalization').
     return re.sub(r'(\w)-\s+(\w)', r'\1\2', text)
+
+
+def fold(text):
+    # NFKC turns ligature characters (ﬁ ﬂ ﬀ ﬃ ﬄ) and no-break spaces into plain
+    # letters and spaces; the soft hyphen and U+2010/2011 are not letters, so map
+    # them to '-' by hand.
+    return re.sub('[\u00ad\u2010\u2011]', '-', unicodedata.normalize('NFKC', text))
+
+
+def page_lines(page):
+    """Text lines of the page as lists of (char, rect), in reading order."""
+    lines = []
+    for block in page.get_text('rawdict')['blocks']:
+        if block['type'] != 0:
+            continue
+        for line in block['lines']:
+            chars = [(c['c'], fitz.Rect(c['bbox'])) for span in line['spans'] for c in span['chars']]
+            if chars:
+                lines.append(chars)
+    return lines
+
+
+def folded_stream(lines):
+    """Fold the page text into one string, remembering which glyph each character came from.
+
+    A hyphen that ends a line and sits between two alphanumerics is dropped, like
+    PyMuPDF's own dehyphenation, so 'prompt-' + 'based' reads 'promptbased'.
+    owner[i] is the (line, char) index of the glyph behind text[i], or None for the
+    space inserted between lines.
+    """
+    text, owner = [], []
+    for n, chars in enumerate(lines):
+        last = max((i for i, (c, _) in enumerate(chars) if c.strip()), default=-1)
+        following = next((c for c, _ in lines[n + 1] if c.strip()), '') if n + 1 < len(lines) else ''
+        joins = (last > 0 and fold(chars[last][0]) == '-' and chars[last - 1][0].isalnum()
+                 and following.isalnum())
+        for i, (c, _) in enumerate(chars):
+            if joins and i >= last:
+                break
+            for ch in fold(c):
+                text.append(ch)
+                owner.append((n, i))
+        if not joins:
+            text.append(' ')
+            owner.append(None)
+    return ''.join(text), owner
+
+
+def phrase_regex(phrase):
+    """Regex for a phrase against the folded page text: a hyphen is optional, and the
+    whitespace after it too (a line-end hyphen leaves no space behind)."""
+    parts, after_hyphen = [], False
+    for ch in ' '.join(fold(phrase).split()):
+        if ch == ' ':
+            parts.append(r'\s*' if after_hyphen else r'\s+')
+        elif ch == '-':
+            parts.append('-?')
+        else:
+            parts.append(re.escape(ch))
+        after_hyphen = ch == '-'
+    return ''.join(parts)
+
+
+def find_folded_matches(page, phrase):
+    """Occurrences of phrase in the page text ignoring ligatures and line-end hyphenation.
+
+    Returns the same shape as group_wrapped_hits: one list of rects per occurrence,
+    one rect per line it spans.
+    """
+    pattern = phrase_regex(phrase)
+    if not pattern:
+        return []
+    lines = page_lines(page)
+    text, owner = folded_stream(lines)
+    groups = []
+    for m in re.finditer(pattern, text, re.IGNORECASE):
+        glyphs = [owner[i] for i in range(m.start(), m.end()) if owner[i]]
+        if not glyphs:
+            continue
+        (first_line, first_char), (last_line, last_char) = glyphs[0], glyphs[-1]
+        rects = []
+        for n in range(first_line, last_line + 1):
+            start = first_char if n == first_line else 0
+            end = last_char if n == last_line else len(lines[n]) - 1
+            boxes = [r for c, r in lines[n][start:end + 1] if c.strip()]
+            if boxes:
+                rects.append(union_rect(boxes))
+        groups.append(rects)
+    return groups
 
 
 def rect_of(hit):
@@ -141,6 +234,8 @@ def main():
         if not groups and dehyphenate(phrase) != phrase:
             hits = page.search_for(dehyphenate(phrase), quads=True)
             groups = group_wrapped_hits(hits)
+        if not groups:
+            groups = find_folded_matches(page, phrase)
         if not groups:
             print(f"[warn] no match on page {item['page']} for phrase: {raw_phrase[:80]!r}", file=sys.stderr)
             continue
