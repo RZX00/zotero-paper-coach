@@ -2,11 +2,11 @@
 
 让你的 AI Agent 按阅读目标给论文 PDF 画重点、写导师式边注，标注写进 PDF，在 Zotero 里直接看。
 
-[![CI](https://github.com/RZX00/zotero-paper-coach/actions/workflows/ci.yml/badge.svg)](https://github.com/RZX00/zotero-paper-coach/actions/workflows/ci.yml)
-
 <p align="center">
   <img src="./docs/assets/banner.png" alt="Zotero Paper Coach 头图：几页带彩色高亮和边注标记的论文，中间是项目名" width="100%" />
 </p>
+
+[![CI](https://github.com/RZX00/zotero-paper-coach/actions/workflows/ci.yml/badge.svg)](https://github.com/RZX00/zotero-paper-coach/actions/workflows/ci.yml)
 
 ## 🔍 实际效果
 
