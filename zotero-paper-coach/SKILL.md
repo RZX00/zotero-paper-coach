@@ -262,6 +262,8 @@ Backups: `--backup` copies the original to `paper.pdf.bak-paper-coach` only if t
 
 - Copy `phrase` from the extracted text of that page. The script normalizes whitespace, so wrapped lines still match. It also compares ligatures as plain letters (a typeset `ﬁ` matches `fi`) and treats a hyphen as optional, so a phrase may keep its natural spelling `prompt-based` even when the PDF breaks the line after `prompt-`, and `gener- alization` still matches `generalization`.
 - Phrases that still do not match are reported on stderr as `[warn] no match …` and skipped. Check stderr and retry those items with a shorter phrase from the same sentence.
+- `page` counts from 1. An item whose `page` is not in the PDF is reported on stderr as `[warn] page … is not in this PDF` and skipped; the other items are still written.
+- With `limit` above 1, each occurrence of the phrase gets its own highlight, including occurrences on neighbouring lines.
 - The script prints the number of annotation objects written: one highlight plus one note for each item that has a note.
 - Every annotation is stamped with the author name `Zotero Paper Coach`; that author name is what `remove_coach_annots.py` matches.
 - If the PDF is open in a reader that locks it (common on Windows), the scripts stop with a message asking the user to close the file; retry after they do.

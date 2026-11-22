@@ -17,7 +17,10 @@ import sys
 import tempfile
 from pathlib import Path
 
-import fitz
+try:
+    import pymupdf as fitz
+except ImportError:
+    import fitz
 
 SCRIPT = Path(__file__).resolve().parent.parent / 'zotero-paper-coach' / 'scripts' / 'annotate_pdf.py'
 
