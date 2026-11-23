@@ -28,7 +28,11 @@ import re
 import shutil
 import sys
 import unicodedata
-import fitz
+
+try:
+    import pymupdf as fitz  # PyMuPDF 1.24.3+; the old 'fitz' name now warns on import
+except ImportError:
+    import fitz
 
 # Author name stamped on every annotation; remove_coach_annots.py uses it to clean up
 # only what this skill wrote.
@@ -154,31 +158,48 @@ def union_rect(hits):
     return out
 
 
-def group_wrapped_hits(hits):
+def is_whole_phrase(page, hit, phrase):
+    """True when one search hit already covers the whole phrase, so it is an
+    occurrence of its own and not a line fragment of a wrapped match."""
+    want = ''.join(fold(phrase).split()).lower()
+    got = ''.join(fold(page.get_textbox(rect_of(hit))).split()).lower()
+    return bool(want) and want in got
+
+
+def group_wrapped_hits(hits, page=None, phrase=''):
     """Group consecutive search hits that belong to one wrapped multi-line match.
 
     PyMuPDF returns one rect/quad per line fragment for wrapped matches. We merge
     nearby vertical fragments into a single logical occurrence so one highlight
-    can span multiple lines.
+    can span multiple lines. A hit that already holds the whole phrase is never
+    merged with its neighbour: two separate occurrences on adjacent lines stay two.
     """
     if not hits:
         return []
 
+    def whole(hit):
+        return page is not None and is_whole_phrase(page, hit, phrase)
+
     groups = [[hits[0]]]
     prev_rect = rect_of(hits[0])
+    prev_whole = whole(hits[0])
     for hit in hits[1:]:
         rect = rect_of(hit)
+        this_whole = whole(hit)
         prev_h = max(prev_rect.height, 1)
         curr_h = max(rect.height, 1)
         same_line = abs(rect.y0 - prev_rect.y0) <= max(prev_h, curr_h) * 0.25
         vertical_gap = rect.y0 - prev_rect.y1
-        wrapped_next_line = (not same_line) and 0 <= vertical_gap <= max(prev_h, curr_h) * 1.5
+        # Search rects span the font's full ascent and descent, so on tightly set text the
+        # next line's rect starts a little above the previous one's bottom edge.
+        wrapped_next_line = (not same_line) and -0.5 * max(prev_h, curr_h) <= vertical_gap <= max(prev_h, curr_h) * 1.5
 
-        if wrapped_next_line:
+        if wrapped_next_line and not prev_whole and not this_whole:
             groups[-1].append(hit)
         else:
             groups.append([hit])
         prev_rect = rect
+        prev_whole = this_whole
     return groups
 
 
@@ -216,28 +237,37 @@ def main():
     # utf-8-sig: PowerShell 5.1 writes a BOM with -Encoding utf8
     with open(args.plan_json, 'r', encoding='utf-8-sig') as f:
         plan = json.load(f)
+    if not isinstance(plan, list) or not all(isinstance(item, dict) for item in plan):
+        sys.exit('[error] the plan file must be a JSON list of {"page", "phrase", ...} objects; '
+                 'convert the annotation plan object first (see SKILL.md, "annotate_pdf.py takes a flat JSON list")')
 
     doc = fitz.open(args.pdf)
     added = 0
     for item in plan:
-        page = doc[item['page'] - 1]
-        raw_phrase = item['phrase']
+        raw_phrase = item.get('phrase') or ''
+        page_no = item.get('page')
+        # bool is an int in Python; a negative or zero index would silently pick a page from the end.
+        if isinstance(page_no, bool) or not isinstance(page_no, int) or not 1 <= page_no <= doc.page_count:
+            print(f"[warn] page {page_no!r} is not in this PDF (1-{doc.page_count}); skipped phrase: {raw_phrase[:80]!r}",
+                  file=sys.stderr)
+            continue
+        page = doc[page_no - 1]
         phrase = normalize_phrase(raw_phrase)
         color = COLORS.get(item.get('color', 'yellow'), COLORS['yellow'])
         note = item.get('note', '')
         limit = int(item.get('limit', 1))
         hits = page.search_for(phrase, quads=True)
-        groups = group_wrapped_hits(hits)
+        groups = group_wrapped_hits(hits, page, phrase)
         if not groups and raw_phrase != phrase:
             hits = page.search_for(raw_phrase, quads=True)
-            groups = group_wrapped_hits(hits)
+            groups = group_wrapped_hits(hits, page, phrase)
         if not groups and dehyphenate(phrase) != phrase:
             hits = page.search_for(dehyphenate(phrase), quads=True)
-            groups = group_wrapped_hits(hits)
+            groups = group_wrapped_hits(hits, page, dehyphenate(phrase))
         if not groups:
             groups = find_folded_matches(page, phrase)
         if not groups:
-            print(f"[warn] no match on page {item['page']} for phrase: {raw_phrase[:80]!r}", file=sys.stderr)
+            print(f"[warn] no match on page {page_no} for phrase: {raw_phrase[:80]!r}", file=sys.stderr)
             continue
 
         count = 0

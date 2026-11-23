@@ -10,7 +10,10 @@ import os
 import shutil
 import sys
 
-import fitz
+try:
+    import pymupdf as fitz  # PyMuPDF 1.24.3+; the old 'fitz' name now warns on import
+except ImportError:
+    import fitz
 
 # 'OpenClaw' is the author name used by versions before 2026-10; keep it so old runs
 # can still be cleaned up.

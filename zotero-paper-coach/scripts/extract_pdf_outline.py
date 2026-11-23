@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import argparse
-import fitz
+try:
+    import pymupdf as fitz  # PyMuPDF 1.24.3+; the old 'fitz' name now warns on import
+except ImportError:
+    import fitz
 import json
 import sys
 

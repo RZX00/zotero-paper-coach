@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, PyMuPDF ${{ matrix.pymupdf }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        # 1.25.3 is the version the README names as tested; the unpinned run catches API removals early.
+        pymupdf: ["pymupdf==1.25.3", "pymupdf"]
+    env:
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+      - name: Phrase matching
+        run: uv run --no-project --with "${{ matrix.pymupdf }}" python tests/test_annotate_matching.py
+      - name: Scripts
+        run: uv run --no-project --with "${{ matrix.pymupdf }}" python tests/test_scripts.py
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: zotero-paper-coach.skill matches the skill folder
+        run: python tools/pack_skill.py --check
+      - name: Scripts compile
+        run: python -m compileall -q zotero-paper-coach/scripts tests tools

@@ -6,6 +6,8 @@
   <img src="./docs/assets/banner.png" alt="Zotero Paper Coach 头图：几页带彩色高亮和边注标记的论文，中间是项目名" width="100%" />
 </p>
 
+[![CI](https://github.com/RZX00/zotero-paper-coach/actions/workflows/ci.yml/badge.svg)](https://github.com/RZX00/zotero-paper-coach/actions/workflows/ci.yml)
+
 ## 🔍 实际效果
 
 ![ReAct 论文第 1 页被 Claude Code 按 quick-read 目标标注后的样子：绿色是先读的背景句，黄色是核心主张，粉色是要解决的问题，蓝色是证据数字，橙色是可引用的句子，右侧黄色图标是边注](./docs/assets/demo-react-annotated.png)
@@ -21,7 +23,7 @@
 - **能用在哪**：任何加载 Agent Skills 的 Agent。已实测 Codex（Windows 11，从 `.agents/skills` 自动加载并完成标注）和 Claude Code（装进 `~/.claude/skills/` 后出现在技能列表里，按本技能完成标注）。2026-10 起改为通用技能，此前只支持 OpenClaw。
 - **写在哪**：标注写进 PDF 文件本身，不是 Zotero 数据库里的原生注释；写之前先备份原件。默认只清理本技能写过的标注，你自己的标注不动。
 - **不适合**：扫描件或 OCR 质量差的 PDF（只出阅读导读和标注计划，不改 PDF）；必须用 Zotero 原生注释的场景。
-- **依赖**：Python 3 和 PyMuPDF；缺依赖时 Agent 先问你，不会自行安装。脚本已在 Windows 11、Python 3.13、PyMuPDF 1.25.3 上测试，最初在 macOS 上开发。
+- **依赖**：Python 3 和 PyMuPDF；缺依赖时 Agent 先问你，不会自行安装。脚本已在 Windows 11、Python 3.13、PyMuPDF 1.25.3 上测试，最初在 macOS 上开发；每次提交由 CI 在 Ubuntu 和 Windows 上用 PyMuPDF 1.25.3 和最新版各跑一遍 [`tests/`](./tests)。
 - **数据去向**：脚本不联网、不需要凭据；导入 Zotero 时只连本机 `127.0.0.1:23119`。Agent 读论文时，正文会进入你所用模型的上下文。
 
 ## 📦 安装
@@ -131,7 +133,8 @@ zotero-paper-coach/            要安装的技能目录
     ├── annotate_pdf.py          把高亮和边注写进 PDF
     ├── remove_coach_annots.py   清理本技能写的标注
     └── import_pdf_to_zotero.py  经 Zotero 连接器导入 PDF
-zotero-paper-coach.skill       技能目录的 zip 打包
+zotero-paper-coach.skill       技能目录的 zip 打包（改完技能目录后运行 tools/pack_skill.py 重新生成）
+tests/                         三个 PDF 脚本的测试
 docs/install.md                给 Agent 读的安装说明
 docs/demo/                     示例 PDF、标注计划和结果
 PROMPT_TEMPLATE.txt            安装提示词
